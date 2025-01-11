@@ -1,4 +1,14 @@
 import { XStack, YStack, View, Text } from "tamagui";
+import Svg, { Path, Circle } from "react-native-svg";
+import { useState } from "react";
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
+  useDerivedValue,
+} from "react-native-reanimated";
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const Port = () => {
   return (
@@ -20,7 +30,32 @@ const Port = () => {
     </View>
   );
 };
+
+type Point = {
+    x: number;
+    y: number;
+}
+const createPath = (pointA: Point, controlPoint: Point, pointB: Point) => {
+  const { x: x1, y: y1 } = pointA;
+  const { x: cx, y: cy } = controlPoint;
+  const { x: x2, y: y2 } = pointB;
+
+  return `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
+};
+
 export default function Board() {
+  const pointA = useSharedValue({ x: 50, y: 100 });
+  const pointB = useSharedValue({ x: 200, y: 200 });
+  const controlX = useSharedValue(100);
+  const controlY = useSharedValue(400);
+const animatedProps = useAnimatedProps(() => {
+    // draw a circle
+  const path = `M ${pointA.value.x} ${pointA.value.y} Q ${controlX.value} ${controlY.value}, ${pointB.value.x} ${pointB.value.y}`;
+    return {
+      d: path,
+    };
+  });
+
   return (
     <View width="70%">
       <XStack
@@ -58,6 +93,24 @@ export default function Board() {
           <Port />
         </YStack>
       </XStack>
+      <Svg
+        height="100%"
+        width="100%"
+        style={{ left: 0, top: 0, position: "absolute" }}
+      >
+        {/* Bézier Curve */}
+        <AnimatedPath
+          animatedProps={animatedProps}
+        //   d={createPath(pointA.value, { x: controlX.value, y: controlY.value }, pointB.value)}
+          stroke="blue"
+          strokeWidth="5"
+          fill="none"
+        />
+
+        {/* Points */}
+        <Circle cx={pointA.value.x} cy={pointA.value.y} r="5" fill="red" />
+        <Circle cx={pointB.value.x} cy={pointB.value.y} r="5" fill="green" />
+      </Svg>
     </View>
   );
 }
