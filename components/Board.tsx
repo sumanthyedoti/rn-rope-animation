@@ -1,21 +1,32 @@
-import { XStack, YStack, View, Text } from "tamagui";
+import { XStack, YStack, View, Text, ViewProps } from "tamagui";
 import Svg, { Path, Circle } from "react-native-svg";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
+  withRepeat,
+  Easing,
+  withSpring,
+  withSequence,
   useDerivedValue,
 } from "react-native-reanimated";
+import { LayoutChangeEvent } from "react-native";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-const Port = () => {
+type PortProps = { onLayout?: (e: LayoutChangeEvent) => void } & ViewProps;
+const Port = ({onLayout, ...props}: PortProps) => {
   return (
     <View
+    onLayout={e => onLayout && onLayout(e)}
+    {...props}
       style={{
         backgroundColor: "#c5c5c5",
         borderRadius: 20,
+        borderWidth: 1,
+        borderColor: "rgba(100, 100, 100, 0.2)",
         padding: 8,
       }}
     >
@@ -32,32 +43,68 @@ const Port = () => {
 };
 
 type Point = {
-    x: number;
-    y: number;
-}
-const createPath = (pointA: Point, controlPoint: Point, pointB: Point) => {
-  const { x: x1, y: y1 } = pointA;
-  const { x: cx, y: cy } = controlPoint;
-  const { x: x2, y: y2 } = pointB;
-
-  return `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
+  x: number;
+  y: number;
 };
 
 export default function Board() {
-  const pointA = useSharedValue({ x: 50, y: 100 });
-  const pointB = useSharedValue({ x: 200, y: 200 });
-  const controlX = useSharedValue(100);
-  const controlY = useSharedValue(400);
-const animatedProps = useAnimatedProps(() => {
-    // draw a circle
-  const path = `M ${pointA.value.x} ${pointA.value.y} Q ${controlX.value} ${controlY.value}, ${pointB.value.x} ${pointB.value.y}`;
+    const boardXY = useRef({x: 0, y: 0});
+  const pointA = useSharedValue({ x: 0, y: 0 });
+  const pointB = useSharedValue({ x: 0, y: 0 });
+  const controlX = useDerivedValue(() => (pointA.value.x + pointB.value.x) / 2, [pointA, pointB]);
+  const controlY = useDerivedValue(() => Math.min(pointA.value.y, pointB.value.y) + 300, [pointA, pointB]);
+  const pathAnimatedProps = useAnimatedProps(() => {
+        const { x: x1, y: y1 } = pointA.value;
+    const { x: cx, y: cy } = { x: controlX.value, y: controlY.value };
+    const { x: x2, y: y2 } = pointB.value;
+    const path = `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
     return {
       d: path,
     };
   });
 
+  const pointAKnobAnimatedProps = useAnimatedProps(() => {
+    return {
+      cx: pointA.value.x,
+      cy: pointA.value.y,
+    };
+  });
+
+  const pointBKnobAnimatedProps = useAnimatedProps(() => {
+    return {
+      cx: pointB.value.x,
+      cy: pointB.value.y,
+    };
+  });
+  const startAnimation = () => {
+    controlY.value = withRepeat(
+        withSequence(
+
+      withSpring(200, {
+        damping: 11,
+        stiffness: 100,
+      }),
+
+      withSpring(400, {
+        damping: 11,
+        stiffness: 100,
+      }),
+        ),
+      -1,
+      true)
+  };
+
+  useEffect(() => {
+    // startAnimation();
+    }, []);
+
   return (
-    <View width="70%">
+    <View width="70%"
+    onLayout={e =>{
+        boardXY.current = {x: e.nativeEvent.layout.x, y: e.nativeEvent.layout.y};
+      }
+    }
+    >
       <XStack
         paddingVertical={25}
         paddingHorizontal={40}
@@ -78,7 +125,13 @@ const animatedProps = useAnimatedProps(() => {
           <Text style={{ fontSize: 16, fontWeight: "semibold", color: "#666" }}>
             Input
           </Text>
-          <Port />
+          <Port
+          onLayout={e =>{
+            e.currentTarget.measureInWindow((x, y, width, height) => {
+                pointA.value = {x: x - boardXY.current.x + width / 2, y: y - boardXY.current.y + height / 2};
+              });
+          } }
+            />
           <Port />
           <Port />
           <Port />
@@ -87,7 +140,13 @@ const animatedProps = useAnimatedProps(() => {
           <Text style={{ fontSize: 16, fontWeight: "semibold", color: "#666" }}>
             Output
           </Text>
-          <Port />
+          <Port
+          onLayout={e =>{
+            e.currentTarget.measureInWindow((x, y, width, height) => {
+                pointB.value = {x: x - boardXY.current.x + width / 2, y: y - boardXY.current.y + height / 2};
+              });
+          } }
+           />
           <Port />
           <Port />
           <Port />
@@ -100,16 +159,16 @@ const animatedProps = useAnimatedProps(() => {
       >
         {/* Bézier Curve */}
         <AnimatedPath
-          animatedProps={animatedProps}
-        //   d={createPath(pointA.value, { x: controlX.value, y: controlY.value }, pointB.value)}
-          stroke="blue"
+          animatedProps={pathAnimatedProps}
+          //   d={createPath(pointA.value, { x: controlX.value, y: controlY.value }, pointB.value)}
+          stroke="#ff10f0"
           strokeWidth="5"
           fill="none"
         />
 
         {/* Points */}
-        <Circle cx={pointA.value.x} cy={pointA.value.y} r="5" fill="red" />
-        <Circle cx={pointB.value.x} cy={pointB.value.y} r="5" fill="green" />
+        <AnimatedCircle animatedProps={pointAKnobAnimatedProps} r="8" fill="hsl(15, 100%, 65%)" />
+        <AnimatedCircle animatedProps={pointBKnobAnimatedProps} r="8" fill="hsl(100, 66%, 60%)" />
       </Svg>
     </View>
   );
