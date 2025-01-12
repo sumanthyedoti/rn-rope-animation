@@ -9,10 +9,9 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import { useEffect, useRef } from "react";
-import Animated, {
+import {
   useSharedValue,
   useAnimatedProps,
-  withTiming,
   withRepeat,
   Easing,
   withSpring,
@@ -21,9 +20,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+import MatcherLayer from "./MatcherLayer";
 
 type PortProps = { onLayout?: (e: LayoutChangeEvent) => void } & ViewProps;
 const Port = ({ onLayout, ...props }: PortProps) => {
@@ -51,7 +48,7 @@ const Port = ({ onLayout, ...props }: PortProps) => {
   );
 };
 
-type Point = {
+export type Point = {
   x: number;
   y: number;
 };
@@ -60,63 +57,43 @@ export default function Board() {
   const boardXY = useRef({ x: 0, y: 0 });
   const pointA = useSharedValue({ x: 0, y: 0 });
   const pointB = useSharedValue({ x: 0, y: 0 });
-  const controlX = useDerivedValue(
-    () => (pointA.value.x + pointB.value.x) / 2,
-    [pointA, pointB]
-  );
-  const controlY = useDerivedValue(
-    () => Math.min(pointA.value.y, pointB.value.y) + 300,
-    [pointA, pointB]
-  );
-  const pathAnimatedProps = useAnimatedProps(() => {
-    const { x: x1, y: y1 } = pointA.value;
-    const { x: cx, y: cy } = { x: controlX.value, y: controlY.value };
-    const { x: x2, y: y2 } = pointB.value;
-    const path = `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
-    return {
-      d: path,
-    };
-  });
+  const isHeldPointA = useSharedValue(false);
+  const isHeldPointB = useSharedValue(false);
 
-  const pointAKnobAnimatedProps = useAnimatedProps(() => {
-    return {
-      cx: pointA.value.x,
-      cy: pointA.value.y,
-    };
-  });
+  const currentPointPosition = useRef({ x: 0, y: 0 });
 
-  const pointBKnobAnimatedProps = useAnimatedProps(() => {
-    return {
-      cx: pointB.value.x,
-      cy: pointB.value.y,
-    };
-  });
-  const startAnimation = () => {
-    controlY.value = withRepeat(
-      withSequence(
-        withSpring(200, {
-          damping: 11,
-          stiffness: 100,
-        }),
-
-        withSpring(400, {
-          damping: 11,
-          stiffness: 100,
-        })
-      ),
-      -1,
-      true
+  const isDraggingPoint = (point: Point, fingurePosition: Point) => {
+    "worklet";
+    return (
+      Math.abs(point.x - fingurePosition.x) < 10 &&
+      Math.abs(point.y - fingurePosition.y) < 10
     );
   };
 
-  useEffect(() => {
-    // startAnimation();
-  }, []);
   const panGesture = Gesture.Pan()
+    .onBegin((e) => {
+      const draggingPointA = isDraggingPoint(pointA.value, { x: e.x, y: e.y });
+      const draggingPointB = isDraggingPoint(pointB.value, { x: e.x, y: e.y });
+      if (draggingPointA) {
+        isHeldPointA.value = true;
+        currentPointPosition.current = pointA.value;
+      }
+      if (draggingPointB) {
+        isHeldPointB.value = true;
+        currentPointPosition.current = pointB.value;
+      }
+    })
     .onUpdate((e) => {
-      console.log("first");
+      if (isHeldPointA.value) {
+        pointA.value = {x: e.x, y: e.y};
+      }
+      if (isHeldPointB.value) {
+        pointB.value = {x: e.x, y: e.y};
+      }
     })
     .onEnd((e) => {
+        isHeldPointA.value = false;
+        isHeldPointB.value = false;
       console.log("second");
     });
 
@@ -188,31 +165,7 @@ export default function Board() {
             <Port />
           </YStack>
         </XStack>
-        <Svg
-          height="100%"
-          width="100%"
-          style={{ left: 0, top: 0, position: "absolute" }}
-        >
-          {/* Bézier Curve */}
-          <AnimatedPath
-            animatedProps={pathAnimatedProps}
-            stroke="hsl(20, 80%, 73%)"
-            strokeWidth="5"
-            fill="none"
-          />
-
-          {/* Points */}
-          <AnimatedCircle
-            animatedProps={pointAKnobAnimatedProps}
-            r="8"
-            fill="hsl(15, 100%, 65%)"
-          />
-          <AnimatedCircle
-            animatedProps={pointBKnobAnimatedProps}
-            r="8"
-            fill="hsl(100, 66%, 60%)"
-          />
-        </Svg>
+        <MatcherLayer pointA={pointA} pointB={pointB} />
       </View>
     </GestureDetector>
   );
