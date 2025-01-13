@@ -18,19 +18,21 @@ const Port = ({ onLayout, ...props }: PortProps) => {
       onLayout={(e) => onLayout && onLayout(e)}
       {...props}
       style={{
-        backgroundColor: "#ccc",
+        backgroundColor: "#e5e5e5",
         borderRadius: 20,
         borderWidth: 1,
         borderColor: "rgba(100, 100, 100, 0.2)",
-        padding: 8,
+        padding: 7,
       }}
     >
       <View
         style={{
-          width: 14,
-          height: 14,
+          width: 15,
+          height: 15,
           borderRadius: 10,
-          backgroundColor: "#666",
+          borderWidth: 2,
+          borderColor: "#a9a9a9",
+          backgroundColor: "#333",
         }}
       />
     </View>
@@ -65,7 +67,7 @@ export default function Board() {
   const isDraggedToAPort = (list: SharedValue<Point[]>, position: Point) => {
     "worklet";
     const { x, y } = position;
-    return list.value.find((c) => (x - c.x) ** 2 + (y - c.y) ** 2 <= 20 ** 2);
+    return list.value.find((c) => (x - c.x) ** 2 + (y - c.y) ** 2 <= 25 ** 2);
   };
 
   const panGesture = Gesture.Pan()
@@ -85,7 +87,6 @@ export default function Board() {
       if (draggingPointB) {
         isHeldPointB.value = true;
         currentPointBPosition.value = pointB.value;
-        runOnJS(setIsDragging)(true);
       }
     })
     .onUpdate((e) => {

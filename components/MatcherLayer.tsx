@@ -8,12 +8,14 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import Animated, {
+  interpolateColor,
   SharedValue,
   useAnimatedProps,
   useDerivedValue,
   withRepeat,
   withSequence,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useEffect } from "react";
 import { Point } from "./Board";
@@ -33,10 +35,14 @@ export default function MatcherLayer({ pointA, pointB, isDragging }: Props) {
     [pointA.value.x, pointB.value.x]
   );
   const controlY = useDerivedValue(
-    () => withSpring(Math.min(pointA.value.y, pointB.value.y) + (isDragging ? 320 : 240), {
-        damping: 8,
-        stiffness: 100,
-    }),
+    () =>
+      withSpring(
+        Math.min(pointA.value.y, pointB.value.y) + (isDragging ? 280 : 200),
+        {
+          damping: 8,
+          stiffness: 100,
+        }
+      ),
     [pointA.value.x, pointB.value.x]
   );
   const pointAPosition = useDerivedValue(() => {
@@ -45,6 +51,9 @@ export default function MatcherLayer({ pointA, pointB, isDragging }: Props) {
   const pointBPosition = useDerivedValue(() => {
     return pointB.value;
   });
+  const colorTransition = useDerivedValue(() =>
+    withTiming(isDragging ? 0 : 1, { duration: 300 })
+  );
   const pathAnimatedProps = useAnimatedProps(() => {
     const { x: x1, y: y1 } = pointA.value;
     const { x: cx, y: cy } = { x: controlX.value, y: controlY.value };
@@ -52,8 +61,13 @@ export default function MatcherLayer({ pointA, pointB, isDragging }: Props) {
     const path = `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
     return {
       d: path,
+      stroke: interpolateColor(
+        colorTransition.value,
+        [0, 1],
+        ["rgb(250, 100, 150)", "rgb(50, 200, 125)",]
+      ),
     };
-  });
+  }, [pointA.value, pointB.value, isDragging]);
 
   const pointAKnobAnimatedProps = useAnimatedProps(() => {
     return {
@@ -79,21 +93,20 @@ export default function MatcherLayer({ pointA, pointB, isDragging }: Props) {
       <AnimatedCircle
         animatedProps={pointAKnobAnimatedProps}
         stroke="hsl(15, 100%, 30%)"
-        strokeWidth={1}
+        strokeWidth={2}
         r="8"
-        fill="hsl(15, 100%, 65%)"
+        fill="hsl(10, 100%, 65%)"
       />
       <AnimatedCircle
         animatedProps={pointBKnobAnimatedProps}
         stroke="hsl(100, 66%, 30%)"
-        strokeWidth={1}
+        strokeWidth={2}
         r="8"
         fill="hsl(100, 66%, 60%)"
       />
       {/* Bézier Curve */}
       <AnimatedPath
         animatedProps={pathAnimatedProps}
-        stroke="hsl(20, 80%, 73%)"
         strokeWidth="5"
         strokeLinecap="round"
         strokeLinejoin="round"
