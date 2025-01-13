@@ -1,10 +1,11 @@
 import { XStack, YStack, View, Text, ViewProps } from "tamagui";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useSharedValue,
   SharedValue,
   runOnUI,
   withSpring,
+  runOnJS,
 } from "react-native-reanimated";
 import { LayoutChangeEvent, Share } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -51,6 +52,7 @@ export default function Board() {
   const currentPointBPosition = useSharedValue({ x: 0, y: 0 });
   const isHeldPointA = useSharedValue(false);
   const isHeldPointB = useSharedValue(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const isDraggingPoint = (point: Point, fingurePosition: Point) => {
     "worklet";
@@ -83,6 +85,7 @@ export default function Board() {
       if (draggingPointB) {
         isHeldPointB.value = true;
         currentPointBPosition.value = pointB.value;
+        runOnJS(setIsDragging)(true);
       }
     })
     .onUpdate((e) => {
@@ -92,6 +95,7 @@ export default function Board() {
       if (isHeldPointB.value) {
         pointB.value = { x: e.x, y: e.y };
       }
+      runOnJS(setIsDragging)(true);
     })
     .onEnd((e) => {
       const position = { x: e.x, y: e.y };
@@ -131,6 +135,7 @@ export default function Board() {
       }
       isHeldPointA.value = false;
       isHeldPointB.value = false;
+      runOnJS(setIsDragging)(false);
     });
 
   const addPointPosition = (list: SharedValue<Point[]>, position: Point) => {
@@ -168,7 +173,12 @@ export default function Board() {
         >
           <YStack gap={25} alignItems="center">
             <Text
-              style={{ fontSize: 16, fontWeight: "semibold", color: "#666" }}
+              style={{
+                fontSize: 16,
+                fontWeight: "semibold",
+                color: "#666",
+                marginBottom: 20,
+              }}
             >
               Input
             </Text>
@@ -202,7 +212,6 @@ export default function Board() {
                     x: x - boardXY.current.x + width / 2,
                     y: y - boardXY.current.y + height / 2,
                   };
-                  //   inputPoints.value[2] = position
                   runOnUI(addPointPosition)(inputPoints, position);
                 });
               }}
@@ -214,7 +223,6 @@ export default function Board() {
                     x: x - boardXY.current.x + width / 2,
                     y: y - boardXY.current.y + height / 2,
                   };
-                  //   inputPoints.value[3] = position
                   runOnUI(addPointPosition)(inputPoints, position);
                 });
               }}
@@ -222,7 +230,12 @@ export default function Board() {
           </YStack>
           <YStack gap={25} alignItems="center">
             <Text
-              style={{ fontSize: 16, fontWeight: "semibold", color: "#666" }}
+              style={{
+                fontSize: 16,
+                fontWeight: "semibold",
+                color: "#666",
+                marginBottom: 20,
+              }}
             >
               Output
             </Text>
@@ -273,7 +286,7 @@ export default function Board() {
             />
           </YStack>
         </XStack>
-        <MatcherLayer pointA={pointA} pointB={pointB} />
+        <MatcherLayer isDragging={isDragging} pointA={pointA} pointB={pointB} />
       </View>
     </GestureDetector>
   );
