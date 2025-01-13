@@ -25,7 +25,7 @@ export default function MatcherLayer({pointA, pointB}: Props) {
     
   );
   const controlY = useDerivedValue(
-    () => Math.min(pointA.value.y, pointB.value.y) + 300,
+    () => Math.min(pointA.value.y, pointB.value.y) + 260,
     [pointA, pointB]
   );
   const pointAPosition = useDerivedValue(() => {
