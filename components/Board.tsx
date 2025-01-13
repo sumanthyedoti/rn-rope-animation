@@ -17,6 +17,8 @@ import {
   withSpring,
   withSequence,
   useDerivedValue,
+  SharedValue,
+  runOnUI,
 } from "react-native-reanimated";
 import { LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -57,10 +59,12 @@ export default function Board() {
   const boardXY = useRef({ x: 0, y: 0 });
   const pointA = useSharedValue({ x: 0, y: 0 });
   const pointB = useSharedValue({ x: 0, y: 0 });
+  const inputPoints = useSharedValue<Point[]>([])
+  const outputPoints = useSharedValue<Point[]>([])
+  const currentPointAPosition = useSharedValue({ x: 0, y: 0 });
+  const currentPointBPosition = useSharedValue({ x: 0, y: 0 });
   const isHeldPointA = useSharedValue(false);
   const isHeldPointB = useSharedValue(false);
-
-  const currentPointPosition = useRef({ x: 0, y: 0 });
 
   const isDraggingPoint = (point: Point, fingurePosition: Point) => {
     "worklet";
@@ -72,30 +76,35 @@ export default function Board() {
 
   const panGesture = Gesture.Pan()
     .onBegin((e) => {
-      const draggingPointA = isDraggingPoint(pointA.value, { x: e.x, y: e.y });
-      const draggingPointB = isDraggingPoint(pointB.value, { x: e.x, y: e.y });
+      const draggingPointA = isDraggingPoint(currentPointAPosition.value, { x: e.x, y: e.y });
+      const draggingPointB = isDraggingPoint(currentPointBPosition.value, { x: e.x, y: e.y });
       if (draggingPointA) {
         isHeldPointA.value = true;
-        currentPointPosition.current = pointA.value;
+        currentPointAPosition.value = pointA.value
       }
       if (draggingPointB) {
         isHeldPointB.value = true;
-        currentPointPosition.current = pointB.value;
+        currentPointBPosition.value = pointB.value
       }
     })
     .onUpdate((e) => {
       if (isHeldPointA.value) {
-        pointA.value = {x: e.x, y: e.y};
+        pointA.value = { x: e.x, y: e.y };
       }
       if (isHeldPointB.value) {
-        pointB.value = {x: e.x, y: e.y};
+        pointB.value = { x: e.x, y: e.y };
       }
     })
     .onEnd((e) => {
-        isHeldPointA.value = false;
-        isHeldPointB.value = false;
-      console.log("second");
+      isHeldPointA.value = false;
+      isHeldPointB.value = false;
+      console.log(inputPoints.value)
     });
+
+    const addPointPosition = (list: SharedValue<Point[]>, position: Point) => {
+        'worklet'
+        list.value.push(position)
+    }
 
   return (
     <GestureDetector gesture={panGesture}>
@@ -133,16 +142,51 @@ export default function Board() {
             <Port
               onLayout={(e) => {
                 e.currentTarget.measureInWindow((x, y, width, height) => {
-                  pointA.value = {
+                    const position: Point = {
                     x: x - boardXY.current.x + width / 2,
                     y: y - boardXY.current.y + height / 2,
-                  };
+                  }
+                  pointA.value = position;
+                  currentPointAPosition.value = position;
+                  runOnUI(addPointPosition)(inputPoints, position)
                 });
               }}
             />
-            <Port />
-            <Port />
-            <Port />
+            <Port
+              onLayout={(e) => {
+                e.currentTarget.measureInWindow((x, y, width, height) => {
+                    const position: Point = {
+                    x: x - boardXY.current.x + width / 2,
+                    y: y - boardXY.current.y + height / 2,
+                  }
+                  runOnUI(addPointPosition)(inputPoints, position)
+                });
+              }}
+             />
+            <Port
+              onLayout={(e) => {
+                e.currentTarget.measureInWindow((x, y, width, height) => {
+                    const position: Point = {
+                    x: x - boardXY.current.x + width / 2,
+                    y: y - boardXY.current.y + height / 2,
+                  }
+                //   inputPoints.value[2] = position
+                  runOnUI(addPointPosition)(inputPoints, position)
+                });
+              }}
+             />
+            <Port
+              onLayout={(e) => {
+                e.currentTarget.measureInWindow((x, y, width, height) => {
+                    const position: Point = {
+                    x: x - boardXY.current.x + width / 2,
+                    y: y - boardXY.current.y + height / 2,
+                  }
+                //   inputPoints.value[3] = position
+                  runOnUI(addPointPosition)(inputPoints, position)
+                });
+              }}
+             />
           </YStack>
           <YStack gap={25} alignItems="center">
             <Text
@@ -153,16 +197,49 @@ export default function Board() {
             <Port
               onLayout={(e) => {
                 e.currentTarget.measureInWindow((x, y, width, height) => {
-                  pointB.value = {
+                    const position: Point = {
                     x: x - boardXY.current.x + width / 2,
                     y: y - boardXY.current.y + height / 2,
-                  };
+                  }
+                  pointB.value = position;
+                  currentPointBPosition.value = position;
+                  runOnUI(addPointPosition)(outputPoints, position)
                 });
               }}
-            />
-            <Port />
-            <Port />
-            <Port />
+             />
+            <Port
+              onLayout={(e) => {
+                e.currentTarget.measureInWindow((x, y, width, height) => {
+                    const position: Point = {
+                    x: x - boardXY.current.x + width / 2,
+                    y: y - boardXY.current.y + height / 2,
+                  }
+                  runOnUI(addPointPosition)(outputPoints, position)
+                });
+              }}
+             />
+            <Port
+              onLayout={(e) => {
+                e.currentTarget.measureInWindow((x, y, width, height) => {
+                    const position: Point = {
+                    x: x - boardXY.current.x + width / 2,
+                    y: y - boardXY.current.y + height / 2,
+                  }
+                  runOnUI(addPointPosition)(outputPoints, position)
+                });
+              }}
+             />
+            <Port
+              onLayout={(e) => {
+                e.currentTarget.measureInWindow((x, y, width, height) => {
+                    const position: Point = {
+                    x: x - boardXY.current.x + width / 2,
+                    y: y - boardXY.current.y + height / 2,
+                  }
+                  runOnUI(addPointPosition)(outputPoints, position)
+                });
+              }}
+             />
           </YStack>
         </XStack>
         <MatcherLayer pointA={pointA} pointB={pointB} />
