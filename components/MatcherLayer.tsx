@@ -17,7 +17,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { useEffect } from "react";
 import { Point } from "./Board";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -26,23 +25,25 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 type Props = {
   pointA: SharedValue<Point>;
   pointB: SharedValue<Point>;
+  velocity: SharedValue<Point>;
   isDragging: boolean;
 };
 
-export default function MatcherLayer({ pointA, pointB, isDragging }: Props) {
+export default function MatcherLayer({ pointA, pointB, isDragging, velocity }: Props) {
   const controlX = useDerivedValue(
     () => (pointA.value.x + pointB.value.x) / 2,
     [pointA.value.x, pointB.value.x]
   );
   const controlY = useDerivedValue(
-    () =>
-      withSpring(
-        Math.min(pointA.value.y, pointB.value.y) + (isDragging ? 280 : 200),
+    () =>{
+     return withSpring(
+        Math.min(pointA.value.y, pointB.value.y) + (isDragging ? 240 : 160) - (Math.abs(velocity.value.y) / 6),
         {
           damping: 8,
           stiffness: 100,
         }
-      ),
+      )
+    },
     [pointA.value.x, pointB.value.x]
   );
   const pointAPosition = useDerivedValue(() => {

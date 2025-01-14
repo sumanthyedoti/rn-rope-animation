@@ -23,6 +23,11 @@ const Port = ({ onLayout, ...props }: PortProps) => {
         borderWidth: 1,
         borderColor: "rgba(100, 100, 100, 0.2)",
         padding: 7,
+        elevation: 3,
+        shadowColor: "#888",
+        shadowOffset: {width: 1, height: 1},
+        shadowRadius: 6,
+        shadowOpacity: 0.3,
       }}
     >
       <View
@@ -54,6 +59,7 @@ export default function Board() {
   const currentPointBPosition = useSharedValue({ x: 0, y: 0 });
   const isHeldPointA = useSharedValue(false);
   const isHeldPointB = useSharedValue(false);
+  const dragVelocity = useSharedValue({x: 0, y: 0});
   const [isDragging, setIsDragging] = useState(false);
 
   const isDraggingPoint = (point: Point, fingurePosition: Point) => {
@@ -90,6 +96,7 @@ export default function Board() {
       }
     })
     .onUpdate((e) => {
+      dragVelocity.value = {x: e.velocityX, y: e.velocityY}
       if (isHeldPointA.value) {
         pointA.value = { x: e.x, y: e.y };
       }
@@ -100,6 +107,7 @@ export default function Board() {
     })
     .onEnd((e) => {
       const position = { x: e.x, y: e.y };
+      dragVelocity.value = {x: 0, y: 0}
       if (isHeldPointA.value) {
         const draggedPort = isDraggedToAPort(inputPoints, position);
         if (!draggedPort) {
@@ -158,7 +166,7 @@ export default function Board() {
         <XStack
           paddingVertical={25}
           paddingHorizontal={40}
-          paddingBottom={140}
+          paddingBottom={100}
           borderRadius={10}
           borderWidth={1}
           borderColor="#c6c6c6"
@@ -287,7 +295,7 @@ export default function Board() {
             />
           </YStack>
         </XStack>
-        <MatcherLayer isDragging={isDragging} pointA={pointA} pointB={pointB} />
+        <MatcherLayer velocity={dragVelocity} isDragging={isDragging} pointA={pointA} pointB={pointB} />
       </View>
     </GestureDetector>
   );
