@@ -23,11 +23,6 @@ const Port = ({ onLayout, ...props }: PortProps) => {
         borderWidth: 1,
         borderColor: "rgba(100, 100, 100, 0.2)",
         padding: 7,
-        elevation: 3,
-        shadowColor: "#888",
-        shadowOffset: {width: 1, height: 1},
-        shadowRadius: 6,
-        shadowOpacity: 0.3,
       }}
     >
       <View
@@ -59,7 +54,7 @@ export default function Board() {
   const currentPointBPosition = useSharedValue({ x: 0, y: 0 });
   const isHeldPointA = useSharedValue(false);
   const isHeldPointB = useSharedValue(false);
-  const dragVelocity = useSharedValue({x: 0, y: 0});
+  const dragVelocity = useSharedValue({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
   const isDraggingPoint = (point: Point, fingurePosition: Point) => {
@@ -96,7 +91,7 @@ export default function Board() {
       }
     })
     .onUpdate((e) => {
-      dragVelocity.value = {x: e.velocityX, y: e.velocityY}
+      dragVelocity.value = { x: e.velocityX, y: e.velocityY };
       if (isHeldPointA.value) {
         pointA.value = { x: e.x, y: e.y };
       }
@@ -107,7 +102,7 @@ export default function Board() {
     })
     .onEnd((e) => {
       const position = { x: e.x, y: e.y };
-      dragVelocity.value = {x: 0, y: 0}
+      dragVelocity.value = { x: 0, y: 0 };
       if (isHeldPointA.value) {
         const draggedPort = isDraggedToAPort(inputPoints, position);
         if (!draggedPort) {
@@ -168,7 +163,7 @@ export default function Board() {
           paddingHorizontal={40}
           paddingBottom={100}
           borderRadius={10}
-          borderWidth={1}
+          borderWidth={2}
           borderColor="#c6c6c6"
           shadowColor="gray"
           shadowOpacity={0.2}
@@ -176,6 +171,7 @@ export default function Board() {
             width: 1,
             height: 1,
           }}
+          shadowRadius={6}
           backgroundColor="#f5f5f5"
           justifyContent="space-between"
           alignItems="center"
@@ -191,51 +187,23 @@ export default function Board() {
             >
               Input
             </Text>
-            <Port
-              onLayout={(e) => {
-                e.currentTarget.measureInWindow((x, y, width, height) => {
-                  const position: Point = {
-                    x: x - boardXY.current.x + width / 2,
-                    y: y - boardXY.current.y + height / 2,
-                  };
-                  pointA.value = position;
-                  runOnUI(addPointPosition)(inputPoints, position);
-                });
-              }}
-            />
-            <Port
-              onLayout={(e) => {
-                e.currentTarget.measureInWindow((x, y, width, height) => {
-                  const position: Point = {
-                    x: x - boardXY.current.x + width / 2,
-                    y: y - boardXY.current.y + height / 2,
-                  };
-                  runOnUI(addPointPosition)(inputPoints, position);
-                });
-              }}
-            />
-            <Port
-              onLayout={(e) => {
-                e.currentTarget.measureInWindow((x, y, width, height) => {
-                  const position: Point = {
-                    x: x - boardXY.current.x + width / 2,
-                    y: y - boardXY.current.y + height / 2,
-                  };
-                  runOnUI(addPointPosition)(inputPoints, position);
-                });
-              }}
-            />
-            <Port
-              onLayout={(e) => {
-                e.currentTarget.measureInWindow((x, y, width, height) => {
-                  const position: Point = {
-                    x: x - boardXY.current.x + width / 2,
-                    y: y - boardXY.current.y + height / 2,
-                  };
-                  runOnUI(addPointPosition)(inputPoints, position);
-                });
-              }}
-            />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Port
+                key={i}
+                onLayout={(e) => {
+                  e.currentTarget.measureInWindow((x, y, width, height) => {
+                    const position: Point = {
+                      x: x - boardXY.current.x + width / 2,
+                      y: y - boardXY.current.y + height / 2,
+                    };
+                    if (i === 1) {
+                      pointA.value = position;
+                    }
+                    runOnUI(addPointPosition)(inputPoints, position);
+                  });
+                }}
+              />
+            ))}
           </YStack>
           <YStack gap={25} alignItems="center">
             <Text
@@ -248,54 +216,31 @@ export default function Board() {
             >
               Output
             </Text>
-            <Port
-              onLayout={(e) => {
-                e.currentTarget.measureInWindow((x, y, width, height) => {
-                  const position: Point = {
-                    x: x - boardXY.current.x + width / 2,
-                    y: y - boardXY.current.y + height / 2,
-                  };
-                  pointB.value = position;
-                  runOnUI(addPointPosition)(outputPoints, position);
-                });
-              }}
-            />
-            <Port
-              onLayout={(e) => {
-                e.currentTarget.measureInWindow((x, y, width, height) => {
-                  const position: Point = {
-                    x: x - boardXY.current.x + width / 2,
-                    y: y - boardXY.current.y + height / 2,
-                  };
-                  runOnUI(addPointPosition)(outputPoints, position);
-                });
-              }}
-            />
-            <Port
-              onLayout={(e) => {
-                e.currentTarget.measureInWindow((x, y, width, height) => {
-                  const position: Point = {
-                    x: x - boardXY.current.x + width / 2,
-                    y: y - boardXY.current.y + height / 2,
-                  };
-                  runOnUI(addPointPosition)(outputPoints, position);
-                });
-              }}
-            />
-            <Port
-              onLayout={(e) => {
-                e.currentTarget.measureInWindow((x, y, width, height) => {
-                  const position: Point = {
-                    x: x - boardXY.current.x + width / 2,
-                    y: y - boardXY.current.y + height / 2,
-                  };
-                  runOnUI(addPointPosition)(outputPoints, position);
-                });
-              }}
-            />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Port
+                key={i}
+                onLayout={(e) => {
+                  e.currentTarget.measureInWindow((x, y, width, height) => {
+                    const position: Point = {
+                      x: x - boardXY.current.x + width / 2,
+                      y: y - boardXY.current.y + height / 2,
+                    };
+                    if (i === 2) {
+                      pointB.value = position;
+                    }
+                    runOnUI(addPointPosition)(outputPoints, position);
+                  });
+                }}
+              />
+            ))}
           </YStack>
         </XStack>
-        <MatcherLayer velocity={dragVelocity} isDragging={isDragging} pointA={pointA} pointB={pointB} />
+        <MatcherLayer
+          velocity={dragVelocity}
+          isDragging={isDragging}
+          pointA={pointA}
+          pointB={pointB}
+        />
       </View>
     </GestureDetector>
   );
